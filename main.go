@@ -18,7 +18,8 @@ var (
 	MetricNum = flag.Int("metric-num", 100, "每台机器的指标数量")
 	VmNum     = flag.Int("vm-num", 50, "机器的数量")
 	Numps     = flag.Int("numps", 500, "发送多少批数据后睡眠1秒钟")
-	Minutes   = flag.Int("minutes", 5, "持续发送多少分钟")
+	Batchs    = flag.Int("batchs", 5, "发送多少批数据")
+	Interval  = flag.Int("interval", 60000, "间隔多少毫秒发送一批数据")
 )
 
 func main() {
@@ -48,7 +49,7 @@ func main() {
 	fmt.Println(time.Now(), " : 开始发送数据")
 	begin := time.Now()
 	wgroup := new(sync.WaitGroup)
-	for i := 0; i < *Minutes; i++ {
+	for i := 0; i < *Batchs; i++ {
 		wgroup.Add(1)
 		go func(index int, total int, wg *sync.WaitGroup) {
 			defer wg.Done()
@@ -58,9 +59,9 @@ func main() {
 			client.Send(mclient, samples, *Numps)
 			end := time.Now()
 			fmt.Println(time.Now(), " : 第", index, "批数据发送完成，耗时：", end.Sub(start))
-		}(i+1, *Minutes, wgroup)
-		if i < *Minutes-1 {
-			time.Sleep(1 * time.Minute)
+		}(i+1, *Batchs, wgroup)
+		if i < *Batchs-1 {
+			time.Sleep(time.Duration(*Interval) * time.Millisecond)
 		}
 	}
 	wgroup.Wait()
